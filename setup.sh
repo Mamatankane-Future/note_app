@@ -14,13 +14,60 @@ npm install --save-dev @types/express
 # Create src directory and server.ts file
 mkdir src && touch src/server.ts
 
-# Add a simple Express server code to server.ts
-echo "import express from 'express';
-const port = 5000;
+# Create a .env file and add environment variables
+touch .env
+echo "MONGO_CONNECTION=mongodb+srv://Bonolo:5TUY33rwFVLgFcDQ@cluster0.m4txywz.mongodb.net/?retryWrites=true&w=majority
+PORT=5000" >> .env
+
+# Install necessary npm packages
+npm i dotenv
+npm i mongoose
+npm i envalid
+
+# Create directories and files
+mkdir src/util && touch src/util/validateEnv.ts
+echo 'import { cleanEnv, port, str } from "envalid";
+
+// Validate and clean environment variables using envalid
+export default cleanEnv(process.env, {
+    MONGO_CONNECTION: str(),
+    PORT: port(),
+});' >> src/util/validateEnv.ts
+
+# Create an Express app file
+touch src/app.ts
+echo '
+import "dotenv/config";
+import express from "express";
+
 const app = express();
-app.get('/', (req, res) => { res.send('Hello, world!'); });
-app.listen(port, () => { console.log('Listening to port: ' + port); });
-" >> src/server.ts
+
+// Define a simple route
+app.get("/", (req, res) => {
+    res.send("Hello, World!");
+});
+
+export default app;' >> src/app.ts
+
+# Create a server file with MongoDB connection and app start logic
+echo '
+import mongoose from "mongoose";
+import app from "./app";
+import env from "./util/validateEnv";
+
+const port = env.PORT;
+
+// Connect to MongoDB and start the server
+mongoose.connect(env.MONGO_CONNECTION).then(
+    () => {
+        console.log("Mongoose connected");
+        app.listen(port, () => {
+            console.log("Server running on port: " + port);
+        });
+    }).catch(console.error);' >> src/server.ts
+
+# Create a directory for models
+mkdir src/models
 
 # Create dist directory
 mkdir dist
